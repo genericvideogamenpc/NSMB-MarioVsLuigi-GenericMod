@@ -12,7 +12,7 @@ public class ScoreboardEntry : MonoBehaviour {
 
     public PlayerController target;
 
-    private int playerId, currentLives, currentStars;
+    private int playerId, currentLives, currentStars, currentCoins;
     private bool rainbowEnabled;
 
     public void Start() {
@@ -43,12 +43,13 @@ public class ScoreboardEntry : MonoBehaviour {
             background.color = new(0.4f, 0.4f, 0.4f, 0.5f);
             return;
         }
-        if (target.lives == currentLives && target.stars == currentStars)
+        if (target.lives == currentLives && target.stars == currentStars && target.totalcoincount == currentCoins)
             // No changes.
             return;
 
         currentLives = target.lives;
         currentStars = target.stars;
+        currentCoins = target.totalcoincount;
         UpdateText();
         ScoreboardUpdater.instance.Reposition();
     }
@@ -57,7 +58,15 @@ public class ScoreboardEntry : MonoBehaviour {
         string txt = "";
         if (currentLives >= 0)
             txt += target.character.uistring + Utils.GetSymbolString(currentLives.ToString());
-        txt += Utils.GetSymbolString($"S{currentStars}");
+        Utils.GetCustomProperty(Enums.NetRoomProperties.Gamemode, out int uigamemode);
+        if (uigamemode == 0)
+        {
+            txt += Utils.GetSymbolString($"S{currentStars}");
+        }
+        if (uigamemode == 2)
+        {
+            txt += Utils.GetSymbolString($"C{currentCoins}");
+        }
 
         valuesText.text = txt;
     }

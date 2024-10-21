@@ -18,26 +18,28 @@ public class DebugControls : MonoBehaviour {
             return;
         }
     }
-
+    
     public void Update() {
         Keyboard kb = Keyboard.current;
-        if (kb[Key.LeftBracket].wasPressedThisFrame) {
-            Time.timeScale /= 2;
-            Debug.Log($"[DEBUG] Timescale set to {Time.timeScale}x");
-        }
-        if (kb[Key.RightBracket].wasPressedThisFrame) {
-            Time.timeScale *= 2;
-            Debug.Log($"[DEBUG] Timescale set to {Time.timeScale}x");
-        }
+//        if (kb[Key.LeftBracket].wasPressedThisFrame) {
+//            Time.timeScale /= 2;
+//            Debug.Log($"[DEBUG] Timescale set to {Time.timeScale}x");
+//        }
+//        if (kb[Key.RightBracket].wasPressedThisFrame) {
+//            Time.timeScale *= 2;
+//            Debug.Log($"[DEBUG] Timescale set to {Time.timeScale}x");
+//       }
         DebugItem(Key.Numpad0, null);
         DebugItem(Key.Numpad1, "Mushroom");
         DebugItem(Key.Numpad2, "FireFlower");
         DebugItem(Key.Numpad3, "BlueShell");
         DebugItem(Key.Numpad4, "MiniMushroom");
-        DebugItem(Key.Numpad5, "MegaMushroom");
+        DebugItem(Key.Q, "MiniFireFlower");
         DebugItem(Key.Numpad6, "Star");
         DebugItem(Key.Numpad7, "PropellerMushroom");
-        DebugItem(Key.Numpad8, "IceFlower");
+        DebugItem(Key.Period, "GunFlower");
+        DebugItem(Key.L, "MiniMushroom");
+        DebugItem(Key.E, "CloudFlower");
         DebugItem(Key.Numpad9, "1-Up");
         DebugEntity(Key.F1, "Koopa");
         DebugEntity(Key.F2, "RedKoopa");

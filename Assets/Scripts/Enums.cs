@@ -16,7 +16,8 @@ public static class Enums {
             itemPriority = item;
         }
     }
-    public static readonly Dictionary<PowerupState, PriorityPair> PowerupStatePriority = new() {
+    public static readonly Dictionary<PowerupState, PriorityPair> PowerupStatePriority = new()
+    {
         [PowerupState.None] = new(-1),
         [PowerupState.MiniMushroom] = new(0, 3),
         [PowerupState.Small] = new(-1),
@@ -25,10 +26,14 @@ public static class Enums {
         [PowerupState.IceFlower] = new(2),
         [PowerupState.PropellerMushroom] = new(2),
         [PowerupState.BlueShell] = new(2),
+        [PowerupState.GunFlower] = new(2),
+        [PowerupState.CloudFlower] = new(2),
+        [PowerupState.Stopwatch] = new(2),
         [PowerupState.MegaMushroom] = new(4),
+        [PowerupState.MiniFireFlower] = new(0, 3),
     };
-    public enum PowerupState : byte {
-        None, MiniMushroom, Small, Mushroom, FireFlower, IceFlower, PropellerMushroom, BlueShell, MegaMushroom
+    public enum PowerupState : int {
+        None, MiniMushroom, Small, Mushroom, FireFlower, IceFlower, PropellerMushroom, BlueShell, GunFlower, CloudFlower, Stopwatch, MegaMushroom, MiniFireFlower,
     }
     #endregion
     #region ANIMATION & MUSIC
@@ -153,6 +158,10 @@ public static class Enums {
         [SoundData("world/star_nearby")]                        World_Star_Nearby = 75,
         [SoundData("world/star_spawn")]                         World_Star_Spawn = 76,
         [SoundData("world/water_splash")]                       World_Water_Splash = 77,
+
+        //Mod Sounds
+        [SoundData("powerup/gunflowerequip")]                   Powerup_Gunflower_Collect = 100,
+        [SoundData("powerup/gunflowershoot")]                   Powerup_Gunflower_Shoot = 101,
     }
 
     #endregion
@@ -169,18 +178,23 @@ public static class Enums {
     public static class NetPlayerGameState {
         public static string Stars { get; } = "S";
         public static string Coins { get; } = "C";
+        public static string TotalCoins { get; } = "Tc";
         public static string Lives { get; } = "L";
         public static string PowerupState { get; } = "P";
         public static string ReserveItem { get; } = "R";
     }
     public static class NetRoomProperties {
+
+        public static string Gamemode { get; } = "Ga";
         public static string Level { get; } = "L";
         public static string StarRequirement { get; } = "S";
+        public static string CtwRequirement { get; } = "Ctw";
         public static string CoinRequirement { get; } = "Co";
         public static string Lives { get; } = "Li";
         public static string Time { get; } = "T";
         public static string DrawTime { get; } = "Dt";
         public static string NewPowerups { get; } = "C";
+        public static string ModPowerups { get; } = "Mp";
         public static string GameStarted { get; } = "G";
         public static string HostName { get; } = "H";
         public static string Debug { get; } = "D";

@@ -20,7 +20,6 @@ public class GlobalController : Singleton<GlobalController>, IInRoomCallbacks, I
     public RenderTexture ndsTexture;
     public PlayerData[] characters;
     public Settings settings;
-    public DiscordController DiscordController { get; private set; }
     public string controlsJson = null;
 
     public bool joinedAsSpectator = false, checkedForVersion;
@@ -39,7 +38,6 @@ public class GlobalController : Singleton<GlobalController>, IInRoomCallbacks, I
 
         Instance = this;
         settings = GetComponent<Settings>();
-        DiscordController = GetComponent<DiscordController>();
 
         PhotonNetwork.AddCallbackTarget(this);
     }

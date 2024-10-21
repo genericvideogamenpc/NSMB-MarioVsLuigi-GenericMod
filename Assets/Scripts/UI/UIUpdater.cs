@@ -13,16 +13,16 @@ public class UIUpdater : MonoBehaviour {
     public GameObject playerTrackTemplate, starTrackTemplate;
     public PlayerController player;
     public Sprite storedItemNull;
-    public TMP_Text uiStars, uiCoins, uiDebug, uiLives, uiCountdown;
+    public TMP_Text uiStars, uiCoins, uiTotalCoins, uiDebug, uiLives, uiCountdown;
     public Image itemReserve, itemColor;
     public float pingSample = 0;
 
     private Material timerMaterial;
-    private GameObject starsParent, coinsParent, livesParent, timerParent;
+    private GameObject starsParent, coinsParent, totalCoinsParent, livesParent, timerParent;
     private readonly List<Image> backgrounds = new();
     private bool uiHidden;
 
-    private int coins = -1, stars = -1, lives = -1, timer = -1;
+    private int coins = -1, stars = -1, totalcoincount = -1, lives = -1, timer = -1;
 
     public void Start() {
         Instance = this;
@@ -30,6 +30,7 @@ public class UIUpdater : MonoBehaviour {
 
         starsParent = uiStars.transform.parent.gameObject;
         coinsParent = uiCoins.transform.parent.gameObject;
+        totalCoinsParent = uiTotalCoins.transform.parent.gameObject;
         livesParent = uiLives.transform.parent.gameObject;
         timerParent = uiCountdown.transform.parent.gameObject;
 
@@ -64,6 +65,18 @@ public class UIUpdater : MonoBehaviour {
         if (uiHidden)
             ToggleUI(false);
 
+        Utils.GetCustomProperty(Enums.NetRoomProperties.Gamemode, out int uigamemode);
+
+        if (uigamemode != 0)
+        {
+            starsParent.SetActive(false);
+        }
+        if (uigamemode != 2)
+        {
+            totalCoinsParent.SetActive(false);
+        }
+
+
         UpdateStoredItemUI();
         UpdateTextUI();
     }
@@ -73,6 +86,7 @@ public class UIUpdater : MonoBehaviour {
 
         starsParent.SetActive(!hidden);
         livesParent.SetActive(!hidden);
+        totalCoinsParent.SetActive(!hidden);
         coinsParent.SetActive(!hidden);
         timerParent.SetActive(!hidden);
     }
@@ -97,6 +111,11 @@ public class UIUpdater : MonoBehaviour {
             uiCoins.text = Utils.GetSymbolString("Cx" + coins + "/" + GameManager.Instance.coinRequirement);
         }
 
+        if (player.totalcoincount != totalcoincount)
+        {
+            totalcoincount = player.totalcoincount;
+            uiTotalCoins.text = Utils.GetSymbolString("Cx" + totalcoincount + "/" + GameManager.Instance.ctwRequirement);
+        }
         if (player.lives >= 0) {
             if (player.lives != lives) {
                 lives = player.lives;

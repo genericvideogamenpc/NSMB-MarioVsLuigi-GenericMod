@@ -23,13 +23,16 @@ namespace NSMB.Utils {
         public static RaiseEventOptions EventMasterClient { get; } = new() { Receivers = ReceiverGroup.MasterClient };
 
         private readonly static Hashtable _defaultRoomProperties = new() {
+            [Enums.NetRoomProperties.Gamemode] = 0,
             [Enums.NetRoomProperties.Level] = 0,
             [Enums.NetRoomProperties.StarRequirement] = 10,
             [Enums.NetRoomProperties.CoinRequirement] = 8,
+            [Enums.NetRoomProperties.CtwRequirement] = 80,
             [Enums.NetRoomProperties.Lives] = -1,
             [Enums.NetRoomProperties.Time] = -1,
             [Enums.NetRoomProperties.DrawTime] = false,
             [Enums.NetRoomProperties.NewPowerups] = true,
+            [Enums.NetRoomProperties.ModPowerups] = true,
             [Enums.NetRoomProperties.GameStarted] = false,
             [Enums.NetRoomProperties.HostName] = "",
             [Enums.NetRoomProperties.Debug] = false,
@@ -50,8 +53,10 @@ namespace NSMB.Utils {
         Enums.NetRoomProperties.Lives,
         Enums.NetRoomProperties.StarRequirement,
         Enums.NetRoomProperties.CoinRequirement,
+        Enums.NetRoomProperties.CtwRequirement,
         Enums.NetRoomProperties.Time,
         Enums.NetRoomProperties.NewPowerups,
+        Enums.NetRoomProperties.ModPowerups,
         Enums.NetRoomProperties.GameStarted,
         Enums.NetRoomProperties.HostName,
     };

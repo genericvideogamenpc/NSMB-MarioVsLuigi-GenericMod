@@ -3,7 +3,7 @@ using Photon.Pun;
 
 public class FireballMover : MonoBehaviourPun {
 
-    public bool left, isIceball;
+    public bool left, isIceball, isGunball;
 
     [SerializeField] private float speed = 3f, bounceHeight = 4.5f, terminalVelocity = 6.25f;
 
@@ -32,9 +32,9 @@ public class FireballMover : MonoBehaviourPun {
         }
 
         HandleCollision();
-
         float gravityInOneFrame = body.gravityScale * Physics2D.gravity.y * Time.fixedDeltaTime;
-        body.velocity = new Vector2(speed * (left ? -1 : 1), Mathf.Max(-terminalVelocity, body.velocity.y));
+        if (!isGunball) body.velocity = new Vector2(speed * (left ? -1 : 1), Mathf.Max(-terminalVelocity, body.velocity.y));
+        if (isGunball) body.velocity = new Vector2(speed * (left ? -1 : 1), (1/2));
     }
 
     private void HandleCollision() {

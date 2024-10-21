@@ -13,6 +13,10 @@ namespace NSMB.Utils {
         public static int FirstPlaceStars {
             get => GameManager.Instance.players.Where(pl => pl.lives != 0).Max(pc => pc.stars);
         }
+        public static int FirstPlaceCoins
+        {
+            get => GameManager.Instance.players.Where(pl => pl.totalcoincount != 0).Max(pc => pc.totalcoincount);
+        }
 
         public static bool BitTest(long bit, int index) {
             return (bit & (1 << index)) != 0;
@@ -83,6 +87,13 @@ namespace NSMB.Utils {
             GetCustomProperty(Enums.NetPlayerProperties.Character, out int index, player.CustomProperties);
             return index;
         }
+
+        public static int GetGamemodeIndex()
+        {
+            GetCustomProperty(Enums.NetRoomProperties.Gamemode, out int index);
+            return index;
+        }
+
         public static PlayerData GetCharacterData(Player player = null) {
             return GlobalController.Instance.characters[GetCharacterIndex(player)];
         }
@@ -397,13 +408,18 @@ namespace NSMB.Utils {
 
             // "losing" variable based on ln(x+1), x being the # of stars we're behind
             int ourStars = player.stars;
+            int ourCoins = player.totalcoincount;
             int leaderStars = FirstPlaceStars;
+            int leaderCoins = FirstPlaceCoins;
 
             if (powerups == null)
                 powerups = Resources.LoadAll<Powerup>("Scriptables/Powerups");
 
             GetCustomProperty(Enums.NetRoomProperties.StarRequirement, out int starsToWin);
+            GetCustomProperty(Enums.NetRoomProperties.CtwRequirement, out int coinsToWin);
+            GetCustomProperty(Enums.NetRoomProperties.Gamemode, out int gamemodeItems);
             GetCustomProperty(Enums.NetRoomProperties.NewPowerups, out bool custom);
+            GetCustomProperty(Enums.NetRoomProperties.ModPowerups, out bool modcustom);
             GetCustomProperty(Enums.NetRoomProperties.Lives, out int livesOn);
             bool lives = false;
             if (livesOn > 0)
@@ -416,17 +432,24 @@ namespace NSMB.Utils {
             foreach (Powerup powerup in powerups) {
                 if (powerup.name == "MegaMushroom" && gm.musicState == Enums.MusicState.MegaMushroom)
                     continue;
-                if ((powerup.big && !big) || (powerup.vertical && !vertical) || (powerup.custom && !custom) || (powerup.lives && !lives))
+                if ((powerup.big && !big) || (powerup.vertical && !vertical) || (powerup.custom && !custom) || (powerup.modcustom && !modcustom) || (powerup.lives && !lives))
                     continue;
 
-                totalChance += powerup.GetModifiedChance(starsToWin, leaderStars, ourStars);
+                if (gamemodeItems != 2)
+                {
+                    totalChance += powerup.GetModifiedChance(starsToWin, leaderStars, ourStars);
+                }
+                else
+                {
+                    totalChance += powerup.GetModifiedChance(coinsToWin, leaderCoins, ourCoins);
+                }
             }
 
             float rand = Random.value * totalChance;
             foreach (Powerup powerup in powerups) {
                 if (powerup.name == "MegaMushroom" && gm.musicState == Enums.MusicState.MegaMushroom)
                     continue;
-                if ((powerup.big && !big) || (powerup.vertical && !vertical) || (powerup.custom && !custom) || (powerup.lives && !lives))
+                if ((powerup.big && !big) || (powerup.vertical && !vertical) || (powerup.custom && !custom) || (powerup.modcustom && !modcustom) || (powerup.lives && !lives))
                     continue;
 
                 float chance = powerup.GetModifiedChance(starsToWin, leaderStars, ourStars);

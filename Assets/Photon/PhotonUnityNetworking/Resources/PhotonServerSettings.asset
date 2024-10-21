@@ -91,6 +91,9 @@ MonoBehaviour:
   - AttemptCollectCoin
   - BlueBecomeItem
   - CancelCollectCoin
+  - InteractWithPlayer
+  - AttemptCollectRedCoin
+  - CollectRedCoin
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 1

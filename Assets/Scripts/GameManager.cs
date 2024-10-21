@@ -56,12 +56,17 @@ public class GameManager : MonoBehaviour, IOnEventCallback, IInRoomCallbacks, IC
     private LoopingMusic loopMusic;
     public Enums.MusicState? musicState = null;
 
+    public bool existingBigStar = false;
+
     public GameObject localPlayer;
     public bool paused, loaded, started;
     public GameObject pauseUI, pausePanel, pauseButton, hostExitUI, hostExitButton;
     public bool gameover = false, musicEnabled = false;
     public readonly HashSet<Player> loadedPlayers = new();
-    public int starRequirement, timedGameDuration = -1, coinRequirement;
+    public int starRequirement, timedGameDuration = -1, coinRequirement, ctwRequirement;
+    public int gamemodeIndex = 0; // 0 = Star Rush, 1 = Deathmatch, 2 = Coin Hunt
+    public int deathRespawnCount;
+    public float RespawnTimer;
     public bool hurryup = false;
     public bool tenSecondCountdown = false;
 
@@ -101,11 +106,6 @@ public class GameManager : MonoBehaviour, IOnEventCallback, IInRoomCallbacks, IC
             //Debug.Log((sender.IsMasterClient ? "[H] " : "") + sender.NickName + " (" + sender.UserId + ") - Instantiating " + prefab);
 
             //even the host can't be trusted...
-            if ((sender?.IsMasterClient ?? false) && (prefab.Contains("Static") || prefab.Contains("1-Up") || (musicEnabled && prefab.Contains("Player")))) {
-                //abandon ship
-                PhotonNetwork.Disconnect();
-                return;
-            }
 
             //server room instantiation
             if (sender == null || sender.IsMasterClient)
@@ -114,8 +114,10 @@ public class GameManager : MonoBehaviour, IOnEventCallback, IInRoomCallbacks, IC
             PlayerController controller = players.FirstOrDefault(pl => sender == pl.photonView.Owner);
             bool invalidProjectile = controller.state != Enums.PowerupState.FireFlower && prefab.Contains("Fireball");
             invalidProjectile |= controller.state != Enums.PowerupState.IceFlower && prefab.Contains("Iceball");
+            invalidProjectile |= controller.state != Enums.PowerupState.GunFlower && prefab.Contains("Gunball");
 
-            if (prefab.Contains("Enemy") || prefab.Contains("Powerup") || prefab.Contains("Static") || prefab.Contains("Bump") || prefab.Contains("BigStar") || prefab.Contains("Coin") || ((!nonSpectatingPlayers.Contains(sender) || musicEnabled) && prefab.Contains("Player"))) {
+
+                    if (prefab.Contains("Enemy") || prefab.Contains("Powerup") || prefab.Contains("Static") || prefab.Contains("Bump") || prefab.Contains("BigStar") || prefab.Contains("Coin") || ((!nonSpectatingPlayers.Contains(sender) || musicEnabled) && prefab.Contains("Player"))) {
                 PhotonNetwork.CloseConnection(sender);
                 PhotonNetwork.DestroyPlayerObjects(sender);
             }
@@ -182,7 +184,10 @@ public class GameManager : MonoBehaviour, IOnEventCallback, IInRoomCallbacks, IC
                 coin.GetComponent<BoxCollider2D>().enabled = true;
             }
 
-            StartCoroutine(BigStarRespawn());
+            if (gamemodeIndex == 0)
+            { 
+                StartCoroutine(BigStarRespawn());
+            }
 
             if (!PhotonNetwork.IsMasterClient)
                 return;
@@ -440,10 +445,18 @@ public class GameManager : MonoBehaviour, IOnEventCallback, IInRoomCallbacks, IC
         origin = new BoundsInt(levelMinTileX, levelMinTileY, 0, levelWidthTile, levelHeightTile, 1);
         originalTiles = tilemap.GetTilesBlock(origin);
 
+        //Current gamemode?
+        Utils.GetCustomProperty(Enums.NetRoomProperties.Gamemode, out gamemodeIndex);
+
         //Star spawning
-        starSpawns = GameObject.FindGameObjectsWithTag("StarSpawn");
-        Utils.GetCustomProperty(Enums.NetRoomProperties.StarRequirement, out starRequirement);
+        if (gamemodeIndex == 0)
+        {
+            starSpawns = GameObject.FindGameObjectsWithTag("StarSpawn");
+            Utils.GetCustomProperty(Enums.NetRoomProperties.StarRequirement, out starRequirement);
+        }
         Utils.GetCustomProperty(Enums.NetRoomProperties.CoinRequirement, out coinRequirement);
+        //Total Coin Count
+        Utils.GetCustomProperty(Enums.NetRoomProperties.CtwRequirement, out ctwRequirement);
 
         SceneManager.SetActiveScene(gameObject.scene);
 
@@ -480,7 +493,6 @@ public class GameManager : MonoBehaviour, IOnEventCallback, IInRoomCallbacks, IC
     }
 
     IEnumerator LoadingComplete(int startTimestamp) {
-        GlobalController.Instance.DiscordController.UpdateActivity();
 
         loaded = true;
         loadedPlayers.Clear();
@@ -554,7 +566,6 @@ public class GameManager : MonoBehaviour, IOnEventCallback, IInRoomCallbacks, IC
             endRealTime = startRealTime + 4500 + timedGameDuration * 1000;
         }
 
-        GlobalController.Instance.DiscordController.UpdateActivity();
 
         if (canvas)
             SceneManager.UnloadSceneAsync("Loading");
@@ -612,7 +623,7 @@ public class GameManager : MonoBehaviour, IOnEventCallback, IInRoomCallbacks, IC
     }
 
     private IEnumerator BigStarRespawn(bool wait = true) {
-        if (wait)
+        if (wait || existingBigStar)
             yield return new WaitForSeconds(10.4f - playerCount / 5f);
 
         if (!PhotonNetwork.IsMasterClient || gameover)
@@ -620,6 +631,12 @@ public class GameManager : MonoBehaviour, IOnEventCallback, IInRoomCallbacks, IC
 
         bigwhile:
         while (true) {
+
+            if (existingBigStar)
+            {
+                break;
+            }
+
             if (remainingSpawns.Count <= 0)
                 remainingSpawns.AddRange(starSpawns);
 
@@ -637,6 +654,7 @@ public class GameManager : MonoBehaviour, IOnEventCallback, IInRoomCallbacks, IC
 
             PhotonNetwork.InstantiateRoomObject("Prefabs/BigStar", spawnPos, Quaternion.identity);
             remainingSpawns.RemoveAt(index);
+            existingBigStar = true;
             break;
         }
     }
@@ -644,7 +662,15 @@ public class GameManager : MonoBehaviour, IOnEventCallback, IInRoomCallbacks, IC
     public void Update() {
         if (gameover)
             return;
-
+        if (!gameover)
+        {
+            RespawnTimer -= Time.deltaTime;
+        }
+        if (RespawnTimer <= 0 && gamemodeIndex != 0)
+        {
+            SendAndExecuteEvent(Enums.NetEventIds.ResetTiles, null, SendOptions.SendReliable);
+            RespawnTimer = 40f;
+        }
         if (endServerTime != -1) {
             float timeRemaining = (endServerTime - PhotonNetwork.ServerTimestamp) / 1000f;
 
@@ -682,6 +708,7 @@ public class GameManager : MonoBehaviour, IOnEventCallback, IInRoomCallbacks, IC
 
         if (musicEnabled)
             HandleMusic();
+
     }
 
     public void CreateNametag(PlayerController controller) {
@@ -694,9 +721,10 @@ public class GameManager : MonoBehaviour, IOnEventCallback, IInRoomCallbacks, IC
         if (gameover || !PhotonNetwork.IsMasterClient)
             return;
 
-        bool starGame = starRequirement != -1;
+        bool starGame = gamemodeIndex == 0;
         bool timeUp = endServerTime != -1 && endServerTime - Time.deltaTime - PhotonNetwork.ServerTimestamp < 0;
         int winningStars = -1;
+        int winningCoins = -1;
         List<PlayerController> winningPlayers = new();
         List<PlayerController> alivePlayers = new();
         foreach (var player in players) {
@@ -720,12 +748,25 @@ public class GameManager : MonoBehaviour, IOnEventCallback, IInRoomCallbacks, IC
         //LIVES CHECKS
         if (alivePlayers.Count == 0) {
             //everyone's dead...? ok then, draw?
-            PhotonNetwork.RaiseEvent((byte) Enums.NetEventIds.EndGame, null, NetworkUtils.EventAll, SendOptions.SendReliable);
+            PhotonNetwork.RaiseEvent((byte)Enums.NetEventIds.EndGame, null, NetworkUtils.EventAll, SendOptions.SendReliable);
             return;
         } else if (alivePlayers.Count == 1 && playerCount >= 2) {
             //one player left alive (and not in a solo game). winner!
-            PhotonNetwork.RaiseEvent((byte) Enums.NetEventIds.EndGame, alivePlayers[0].photonView.Owner, NetworkUtils.EventAll, SendOptions.SendReliable);
+            PhotonNetwork.RaiseEvent((byte)Enums.NetEventIds.EndGame, alivePlayers[0].photonView.Owner, NetworkUtils.EventAll, SendOptions.SendReliable);
             return;
+        }
+        //COINS CHECKS MOD!! WOOO!!
+        foreach (var player in alivePlayers) {
+            if (gamemodeIndex == 2 && player.totalcoincount >= ctwRequirement)
+            {
+                winningPlayers.Clear();
+                winningStars = player.totalcoincount;
+                winningPlayers.Add(player);
+
+                PhotonNetwork.RaiseEvent((byte)Enums.NetEventIds.EndGame, winningPlayers[0].photonView.Owner, NetworkUtils.EventAll, SendOptions.SendReliable);
+
+                return;
+            }
         }
         //TIMED CHECKS
         if (timeUp) {
@@ -741,7 +782,14 @@ public class GameManager : MonoBehaviour, IOnEventCallback, IInRoomCallbacks, IC
         }
         if (starGame && winningStars >= starRequirement) {
             if (winningPlayers.Count == 1)
-                PhotonNetwork.RaiseEvent((byte) Enums.NetEventIds.EndGame, winningPlayers[0].photonView.Owner, NetworkUtils.EventAll, SendOptions.SendReliable);
+                PhotonNetwork.RaiseEvent((byte)Enums.NetEventIds.EndGame, winningPlayers[0].photonView.Owner, NetworkUtils.EventAll, SendOptions.SendReliable);
+
+            return;
+        }
+        if (gamemodeIndex == 2 && winningCoins >= ctwRequirement)
+        {
+            if (winningPlayers.Count == 1)
+                PhotonNetwork.RaiseEvent((byte)Enums.NetEventIds.EndGame, winningPlayers[0].photonView.Owner, NetworkUtils.EventAll, SendOptions.SendReliable);
 
             return;
         }

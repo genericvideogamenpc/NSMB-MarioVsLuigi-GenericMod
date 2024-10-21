@@ -27,12 +27,12 @@ public class MainMenuManager : MonoBehaviour, ILobbyCallbacks, IInRoomCallbacks,
     public GameObject title, bg, mainMenu, optionsMenu, lobbyMenu, createLobbyPrompt, inLobbyMenu, creditsMenu, controlsMenu, privatePrompt, updateBox;
     public GameObject[] levelCameraPositions;
     public GameObject sliderText, lobbyText, currentMaxPlayers, settingsPanel;
-    public TMP_Dropdown levelDropdown, characterDropdown;
+    public TMP_Dropdown gamemodeDropdown, levelDropdown, characterDropdown;
     public RoomIcon selectedRoomIcon, privateJoinRoom;
     public Button joinRoomBtn, createRoomBtn, startGameBtn;
-    public Toggle ndsResolutionToggle, fullscreenToggle, livesEnabled, powerupsEnabled, timeEnabled, drawTimeupToggle, fireballToggle, vsyncToggle, privateToggle, privateToggleRoom, aspectToggle, spectateToggle, scoreboardToggle, filterToggle;
+    public Toggle ndsResolutionToggle, fullscreenToggle, starsEnabled, livesEnabled, powerupsEnabled, modpowerupsEnabled, timeEnabled, drawTimeupToggle, fireballToggle, vsyncToggle, privateToggle, privateToggleRoom, aspectToggle, spectateToggle, scoreboardToggle, filterToggle;
     public GameObject playersContent, playersPrefab, chatContent, chatPrefab;
-    public TMP_InputField nicknameField, starsText, coinsText, livesField, timeField, lobbyJoinField, chatTextField;
+    public TMP_InputField nicknameField, starsText, ctwText, coinsText, livesField, timeField, lobbyJoinField, chatTextField;
     public Slider musicSlider, sfxSlider, masterSlider, lobbyPlayersSlider, changePlayersSlider;
     public GameObject mainMenuSelected, optionsSelected, lobbySelected, currentLobbySelected, createLobbySelected, creditsSelected, controlsSelected, privateSelected, reconnectSelected, updateBoxSelected;
     public GameObject errorBox, errorButton, rebindPrompt, reconnectBox;
@@ -44,6 +44,8 @@ public class MainMenuManager : MonoBehaviour, ILobbyCallbacks, IInRoomCallbacks,
     public string selectedRoom;
     public bool askedToJoin;
 
+    public int lastGamemode;
+
     public Image overallColor, shirtColor;
     public GameObject palette, paletteDisabled;
 
@@ -51,7 +53,7 @@ public class MainMenuManager : MonoBehaviour, ILobbyCallbacks, IInRoomCallbacks,
 
     public Selectable[] roomSettings;
 
-    public List<string> maps, debugMaps;
+    public List<string> modes, maps, debugMaps;
 
     private bool pingsReceived, joinedLate;
     private List<string> formattedRegions;
@@ -95,6 +97,8 @@ public class MainMenuManager : MonoBehaviour, ILobbyCallbacks, IInRoomCallbacks,
             Utils.GetCustomProperty(Enums.NetRoomProperties.Lives, out int lives, room.CustomProperties);
             Utils.GetCustomProperty(Enums.NetRoomProperties.StarRequirement, out int stars, room.CustomProperties);
             Utils.GetCustomProperty(Enums.NetRoomProperties.CoinRequirement, out int coins, room.CustomProperties);
+            //Utils.GetCustomProperty(Enums.NetRoomProperties.CtwRequirement, out int totalcoincount, room.CustomProperties);
+            //Utils.GetCustomProperty(Enums.NetRoomProperties.Gamemode, out int gamemode, room.CustomProperties);
 
             bool valid = true;
             valid &= room.IsVisible && room.IsOpen;
@@ -150,10 +154,8 @@ public class MainMenuManager : MonoBehaviour, ILobbyCallbacks, IInRoomCallbacks,
     // ROOM CALLBACKS
     public void OnPlayerPropertiesUpdate(Player player, Hashtable playerProperties) {
         // increase or remove when toadette or another character is added
+        // !! Removed, code that makes choosing greater index of character close the connection.
         Utils.GetCustomProperty(Enums.NetRoomProperties.Debug, out bool debug);
-        if (PhotonNetwork.IsMasterClient && Utils.GetCharacterIndex(player) > 1 && !debug) {
-            PhotonNetwork.CloseConnection(player);
-        }
         UpdateSettingEnableStates();
     }
 
@@ -209,11 +211,14 @@ public class MainMenuManager : MonoBehaviour, ILobbyCallbacks, IInRoomCallbacks,
             return;
 
         AttemptToUpdateProperty<bool>(updatedProperties, Enums.NetRoomProperties.Debug, ChangeDebugState);
+        AttemptToUpdateProperty<int>(updatedProperties, Enums.NetRoomProperties.Gamemode, ChangeGamemode);
         AttemptToUpdateProperty<int>(updatedProperties, Enums.NetRoomProperties.Level, ChangeLevel);
         AttemptToUpdateProperty<int>(updatedProperties, Enums.NetRoomProperties.StarRequirement, ChangeStarRequirement);
+        AttemptToUpdateProperty<int>(updatedProperties, Enums.NetRoomProperties.CtwRequirement, ChangeCtwRequirement);
         AttemptToUpdateProperty<int>(updatedProperties, Enums.NetRoomProperties.CoinRequirement, ChangeCoinRequirement);
         AttemptToUpdateProperty<int>(updatedProperties, Enums.NetRoomProperties.Lives, ChangeLives);
         AttemptToUpdateProperty<bool>(updatedProperties, Enums.NetRoomProperties.NewPowerups, ChangeNewPowerups);
+        AttemptToUpdateProperty<bool>(updatedProperties, Enums.NetRoomProperties.ModPowerups, ChangeModPowerups);
         AttemptToUpdateProperty<int>(updatedProperties, Enums.NetRoomProperties.Time, ChangeTime);
         AttemptToUpdateProperty<bool>(updatedProperties, Enums.NetRoomProperties.DrawTime, ChangeDrawTime);
         AttemptToUpdateProperty<string>(updatedProperties, Enums.NetRoomProperties.HostName, ChangeLobbyHeader);
@@ -286,7 +291,7 @@ public class MainMenuManager : MonoBehaviour, ILobbyCallbacks, IInRoomCallbacks,
             foreach (Region r in pingSortedRegions)
                 formattedRegions.Add($"{r.Code} <color=#bbbbbb>({(r.Ping == 4000 ? "N/A" : r.Ping + "ms")})");
 
-            lastRegion = pingSortedRegions[0].Code;
+            lastRegion = "us";
             pingsReceived = true;
         }, "");
     }
@@ -309,7 +314,6 @@ public class MainMenuManager : MonoBehaviour, ILobbyCallbacks, IInRoomCallbacks,
     public void OnLeftRoom() {
         OpenLobbyMenu();
         ClearChat();
-        GlobalController.Instance.DiscordController.UpdateActivity();
     }
     public void OnJoinRandomFailed(short reasonId, string reasonMessage) {
         OnJoinRoomFailed(reasonId, reasonMessage);
@@ -419,7 +423,6 @@ public class MainMenuManager : MonoBehaviour, ILobbyCallbacks, IInRoomCallbacks,
         HorizontalCamera.OFFSET_TARGET = 0;
         HorizontalCamera.OFFSET = 0;
         GlobalController.Instance.joinedAsSpectator = false;
-        Time.timeScale = 1;
 
         if (GlobalController.Instance.disconnectCause != null) {
             OpenErrorBox(GlobalController.Instance.disconnectCause.Value);
@@ -428,6 +431,7 @@ public class MainMenuManager : MonoBehaviour, ILobbyCallbacks, IInRoomCallbacks,
 
         Camera.main.transform.position = levelCameraPositions[Random.Range(0, maps.Count)].transform.position;
         levelDropdown.AddOptions(maps);
+        gamemodeDropdown.AddOptions(modes);
         LoadSettings(!PhotonNetwork.InRoom);
 
         //Photon stuff.
@@ -485,7 +489,6 @@ public class MainMenuManager : MonoBehaviour, ILobbyCallbacks, IInRoomCallbacks,
 
         rebindManager.Init();
 
-        GlobalController.Instance.DiscordController.UpdateActivity();
         EventSystem.current.SetSelectedGameObject(title);
 
 #if PLATFORM_WEBGL
@@ -577,6 +580,8 @@ public class MainMenuManager : MonoBehaviour, ILobbyCallbacks, IInRoomCallbacks,
 
         OpenInLobbyMenu();
         characterDropdown.SetValueWithoutNotify(Utils.GetCharacterIndex());
+        gamemodeDropdown.SetValueWithoutNotify(Utils.GetGamemodeIndex());
+        lastGamemode = gamemodeDropdown.value;
 
         if (PhotonNetwork.IsMasterClient)
             LocalChatMessage("You are the room's host! You can click on player names to control your room, or use chat commands. Do /help for more help.", Color.red);
@@ -596,7 +601,6 @@ public class MainMenuManager : MonoBehaviour, ILobbyCallbacks, IInRoomCallbacks,
         });
         if (updatePingCoroutine == null)
             updatePingCoroutine = StartCoroutine(UpdatePing());
-        GlobalController.Instance.DiscordController.UpdateActivity();
 
         Utils.GetCustomProperty(Enums.NetPlayerProperties.Spectator, out bool spectating, PhotonNetwork.LocalPlayer.CustomProperties);
         spectateToggle.isOn = spectating;
@@ -796,6 +800,11 @@ public class MainMenuManager : MonoBehaviour, ILobbyCallbacks, IInRoomCallbacks,
         powerupsEnabled.SetIsOnWithoutNotify(value);
     }
 
+    public void ChangeModPowerups(bool value)
+    {
+        modpowerupsEnabled.SetIsOnWithoutNotify(value);
+    }
+
     public void ChangeLives(int lives) {
         livesEnabled.SetIsOnWithoutNotify(lives != -1);
         UpdateSettingEnableStates();
@@ -829,6 +838,15 @@ public class MainMenuManager : MonoBehaviour, ILobbyCallbacks, IInRoomCallbacks,
         };
         PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
     }
+
+    public void SetCustomPowerups(Toggle toggle)
+    {
+        Hashtable properties = new()
+        {
+            [Enums.NetRoomProperties.ModPowerups] = toggle.isOn
+        };
+        PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
+    }
     public void EnableLives(Toggle toggle) {
         Hashtable properties = new() {
             [Enums.NetRoomProperties.Lives] = toggle.isOn ? int.Parse(livesField.text) : -1
@@ -836,10 +854,46 @@ public class MainMenuManager : MonoBehaviour, ILobbyCallbacks, IInRoomCallbacks,
         PhotonNetwork.CurrentRoom.SetCustomProperties(properties);
     }
 
+    public void ChangeGamemode(int index)
+    {
+        if (lastGamemode != gamemodeDropdown.value)
+        {
+            return;
+        }
+        gamemodeDropdown.SetValueWithoutNotify(index);
+        LocalChatMessage("Gamemode set to: " + gamemodeDropdown.options[index].text, Color.red);
+    }
     public void ChangeLevel(int index) {
         levelDropdown.SetValueWithoutNotify(index);
         LocalChatMessage("Map set to: " + levelDropdown.options[index].text, Color.red);
         Camera.main.transform.position = levelCameraPositions[index].transform.position;
+    }
+    public void SetGamemodeIndex()
+    {
+        if (!PhotonNetwork.IsMasterClient)
+            return;
+
+        int newGamemodeIndex = gamemodeDropdown.value;
+        if (newGamemodeIndex == lastGamemode)
+        {
+            return;
+        }
+
+        //ChangeLevel(newGamemodeIndex);
+
+        Hashtable table = new()
+        {
+            [Enums.NetRoomProperties.Gamemode] = gamemodeDropdown.value
+        };
+        PhotonNetwork.CurrentRoom.SetCustomProperties(table);
+
+        if (gamemodeDropdown.value == 1)
+        {
+            livesEnabled.isOn = true;
+        }
+
+
+        lastGamemode = gamemodeDropdown.value;
     }
     public void SetLevelIndex() {
         if (!PhotonNetwork.IsMasterClient)
@@ -929,9 +983,12 @@ public class MainMenuManager : MonoBehaviour, ILobbyCallbacks, IInRoomCallbacks,
         foreach (Selectable s in roomSettings)
             s.interactable = PhotonNetwork.IsMasterClient;
 
-        livesField.interactable = PhotonNetwork.IsMasterClient && livesEnabled.isOn;
+        starsText.interactable = PhotonNetwork.IsMasterClient && gamemodeDropdown.value == 0;
+        livesField.interactable = PhotonNetwork.IsMasterClient && livesEnabled.isOn || gamemodeDropdown.value != 0;
         timeField.interactable = PhotonNetwork.IsMasterClient && timeEnabled.isOn;
         drawTimeupToggle.interactable = PhotonNetwork.IsMasterClient && timeEnabled.isOn;
+        livesEnabled.interactable = PhotonNetwork.IsMasterClient && gamemodeDropdown.value != 1;
+        ctwText.interactable = PhotonNetwork.IsMasterClient && gamemodeDropdown.value == 2;
 
         Utils.GetCustomProperty(Enums.NetRoomProperties.Debug, out bool debug);
         privateToggleRoom.interactable = PhotonNetwork.IsMasterClient && !debug;
@@ -1304,6 +1361,29 @@ public class MainMenuManager : MonoBehaviour, ILobbyCallbacks, IInRoomCallbacks,
 
         Hashtable table = new() {
             [Enums.NetRoomProperties.StarRequirement] = newValue
+        };
+        PhotonNetwork.CurrentRoom.SetCustomProperties(table);
+        //ChangeStarRequirement(newValue);
+    }
+    public void ChangeCtwRequirement(int coins)
+    {
+        ctwText.text = coins.ToString();
+    }
+    public void SetCtwRequirement(TMP_InputField input)
+    {
+        if (!PhotonNetwork.IsMasterClient)
+            return;
+
+        int.TryParse(input.text, out int newValue);
+        if (newValue < 1)
+        {
+            newValue = 5;
+            input.text = newValue.ToString();
+        }
+
+        Hashtable table = new()
+        {
+            [Enums.NetRoomProperties.CtwRequirement] = newValue
         };
         PhotonNetwork.CurrentRoom.SetCustomProperties(table);
         //ChangeStarRequirement(newValue);

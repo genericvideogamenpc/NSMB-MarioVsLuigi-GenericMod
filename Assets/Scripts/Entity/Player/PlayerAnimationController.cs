@@ -220,7 +220,7 @@ public class PlayerAnimationController : MonoBehaviourPun {
             animator.SetBool("head carry", controller.holding != null && controller.holding is FrozenCube);
             animator.SetBool("pipe", controller.pipeEntering != null);
             animator.SetBool("blueshell", controller.state == Enums.PowerupState.BlueShell);
-            animator.SetBool("mini", controller.state == Enums.PowerupState.MiniMushroom);
+            animator.SetBool("mini", controller.state == Enums.PowerupState.MiniMushroom || controller.state == Enums.PowerupState.MiniFireFlower);
             animator.SetBool("mega", controller.state == Enums.PowerupState.MegaMushroom);
             animator.SetBool("inShell", controller.inShell || (controller.state == Enums.PowerupState.BlueShell && (controller.crouching || controller.groundpound) && controller.groundpoundCounter <= 0.15f));
         } else {
@@ -244,6 +244,7 @@ public class PlayerAnimationController : MonoBehaviourPun {
         } else {
             transform.localScale = controller.state switch {
                 Enums.PowerupState.MiniMushroom => Vector3.one / 2,
+                Enums.PowerupState.MiniFireFlower => Vector3.one / 1.9f,
                 Enums.PowerupState.MegaMushroom => Vector3.one + (Vector3.one * (Mathf.Min(1, 1 - (controller.giantStartTimer / controller.giantStartTime)) * 2.6f)),
                 _ => Vector3.one,
             };
@@ -256,8 +257,12 @@ public class PlayerAnimationController : MonoBehaviourPun {
         materialBlock.SetFloat("RainbowEnabled", controller.invincible > 0 ? 1.1f : 0f);
         int ps = controller.state switch {
             Enums.PowerupState.FireFlower => 1,
+            Enums.PowerupState.MiniFireFlower => 1,
             Enums.PowerupState.PropellerMushroom => 2,
             Enums.PowerupState.IceFlower => 3,
+            Enums.PowerupState.CloudFlower => 4,
+            Enums.PowerupState.GunFlower => 5,
+            Enums.PowerupState.Stopwatch => 6,
             _ => 0
         };
         materialBlock.SetFloat("PowerupState", ps);

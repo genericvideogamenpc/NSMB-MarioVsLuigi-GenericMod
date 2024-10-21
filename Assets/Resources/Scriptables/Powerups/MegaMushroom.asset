@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ea796f302b1a91d478efc94e21899d8d, type: 3}
   m_Name: MegaMushroom
   m_EditorClassIdentifier: 
-  state: 8
+  state: 11
   prefab: MegaMushroom
   soundEffect: 40
   spawnChance: -1
@@ -20,6 +20,7 @@ MonoBehaviour:
   big: 1
   vertical: 0
   custom: 0
+  modcustom: 0
   lives: 0
   reserveSprite: {fileID: 2690215448161037315, guid: a87d3b028baa82640b06b88398a8c4f0,
     type: 3}

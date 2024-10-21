@@ -2,6 +2,7 @@
 A terribly made mod of a unity-standalone 2-10 player remake of the Mario vs. Luigi gamemode from the New Super Mario Bros DS download game. 
 Intended to be used for other modders to take features or code from for their own mod, no matter how much it sucks. It was also made for my friends to play so, take that as you will. Noticably, discord RPC was removed because I had some issues with it and I just don't care.
 
+Toad is a new character, and all characters have unique physics. You can guess what they are and how they're unbalanced.
 Includes the original levels in the unity remake, with 2 more and then 2 special maps for a certain feature mentioned later.
 All powerups of the original mod, and the gunflower (dont ask), (buggy) stopwatch, cloudflower (disabled in DM), and Minifireflower.
 And now, gamemodes! While unbalanced, they're still here! There's the original Star Rush, theres Deathmatch, and Coin Hunt. Coin Hunt is basically Star Rush but collect like, 100 coins. Also players drop coins Coin Hunt mode (that don't contribute to the item count).
