@@ -1,17 +1,17 @@
 # NSMB-MarioVsLuigi
-A unity-standalone 2-10 player remake of the Mario vs. Luigi gamemode from the New Super Mario Bros DS download game. 
+A terribly made mod of a unity-standalone 2-10 player remake of the Mario vs. Luigi gamemode from the New Super Mario Bros DS download game. 
+Intended to be used for other modders to take features or code from for their own mod, no matter how much it sucks. It was also made for my friends to play so, take that as you will. Noticably, discord RPC was removed because I had some issues with it and I just don't care.
 
-Includes the 5 default levels (Grassland, Bricks, Castle, Pipes, and Ice), along with a handful of custom levels to battle on! 
-All power-ups are included and remain faithful to their original counterparts, along with the new addition of the Propeller Suit & Ice Flower!
+Includes the original levels in the unity remake, with 2 more and then 2 special maps for a certain feature mentioned later.
+All powerups of the original mod, and the gunflower (dont ask), (buggy) stopwatch, cloudflower (disabled in DM), and Minifireflower.
+And now, gamemodes! While unbalanced, they're still here! There's the original Star Rush, theres Deathmatch, and Coin Hunt. Coin Hunt is basically Star Rush but collect like, 100 coins. Also players drop coins Coin Hunt mode (that don't contribute to the item count).
 
 ## Discord
-[**Join the discord**](https://discord.gg/dgKVaUKpj5) to keep up to date with the development of the game, make feature suggestions, report bugs (if you're too lazy to use issues...), get technical support, look for people to play with, and just talk about the game!
+[**Join the discord**](https://discord.gg/dgKVaUKpj5) for the original game. Do not report bugs there.
 
 ## Download
 
-[Play now in browser on itch.io!](https://ipodtouch0218.itch.io/nsmb-mariovsluigi)
-
-Windows, Linux, and Mac Builds: https://github.com/ipodtouch0218/NSMB-MarioVsLuigi/releases/latest
+This mod will not be built for any platforms by me, but it is 100% fine if you do. 
 
 ## Default Controls
 | Action | Keyboard | Gamepad *(unstable)* |
